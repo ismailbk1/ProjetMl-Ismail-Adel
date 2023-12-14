@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet">
+  <title>Genre Prediction</title>
+</head>
+<style>
+  body {
+    font-family: 'Arial', sans-serif;
+  }
+  #drop-zone {
+    border: 2px dashed #ccc;
+    padding: 20px;
+    text-align: center;
+    margin: 20px;
+  }
+  #prediction-result {
+    margin-top: 20px;
+  }
+</style>
+<body>
+  <div id="drop-zone" ondragover="onDragOver(event)" ondrop="onDrop(event)">
+    <p>Drag & Drop a .wav file here</p>
+    <input type="file" id="file-input" onchange="handleFileSelect(event)">
+    <button onclick="uploadFile()">Upload</button>
+  </div>
+  <div id="prediction-result"></div>
+  <script>
+    function onDragOver(event) {
+      event.preventDefault();
+    }
+
+    function onDrop(event) {
+      event.preventDefault();
+      handleFiles(event.dataTransfer.files);
+    }
+
+    function handleFileSelect(event) {
+      handleFiles(event.target.files);
+    }
+
+    function handleFiles(files) {
+      if (files.length > 0) {
+        const file = files[0];
+        if (file.type === 'audio/wav') {
+          readFile(file);
+          console.log("🚀 ~ file: index.html:52 ~ handleFiles ~ readFile:", readFile)
+        } else {
+          alert('Please select a valid .wav file.');
+        }
+      }
+    }
+
+    function readFile(file) {
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const base64String = e.target.result.split(',')[1];
+        sendToPredictionService(base64String);
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function sendToPredictionService(base64Data) {
+      // Replace the URL with the actual endpoint of your SVM service
+      const predictionServiceUrl = "http://172.19.0.2:5003/predict";
+
+      fetch(predictionServiceUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ data: base64Data }),
+      })
+        .then(response => response.json())
+        .then(data => {
+          displayPredictionResult(data.result);
+        })//.then(console.log("the send works fine"))
+        .catch(error => console.error('Error:', error));
+    }
+
+    function displayPredictionResult(result) {
+      const resultDiv = document.getElementById('prediction-result');
+      resultDiv.innerHTML = `<p>Genre Prediction: ${result}</p>`;
+    }
+
+    function uploadFile() {
+      const fileInput = document.getElementById('file-input');
+      handleFiles(fileInput.files);
+      //console.log("upload files works");
+    }
+
+  </script>
+</body>
+</html>
